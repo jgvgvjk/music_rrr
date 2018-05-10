@@ -1,1 +1,1 @@
-node r3b.js
+node bot.js
