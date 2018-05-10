@@ -1,30 +1,49 @@
-const Discord = require('discord.js');
+const Discord = require("discord.js");
 const client = new Discord.Client();
+const moment = require('moment');
 const ytdl = require('ytdl-core');
 const request = require('request');
-const fs = require('fs');
+var Canvas = require('canvas')
+const prettyMs = require('pretty-ms');
+const fkkRecently = new Set();
 const getYoutubeID = require('get-youtube-id');
 const fetchVideoInfo = require('youtube-info');
+const fs = require('fs');
+const ms = require("ms");
+const dateFormat = require('dateformat');
+
+  client.on('ready',  () => {
+    console.log('تم تشغيل :dragon  ');
+    console.log(`Logged in as * [ " ${client.user.username} " ] servers! [ " ${client.guilds.size} " ]`);
+    console.log(`Logged in as * [ " ${client.user.username} " ] Users! [ " ${client.users.size} " ]`);
+    console.log(`Logged in as * [ " ${client.user.username} " ] channels! [ " ${client.channels.size} " ]`);
+  });
+
+
+client.on('message', message => {
+        if (message.content.startsWith(".avatar")) {
+            var mentionned = message.mentions.users.first();
+        var x5bzm;
+          if(mentionned){
+              var x5bzm = mentionned;
+          } else {
+              var x5bzm = message.author;
+              
+          }
+            const embed = new Discord.RichEmbed()
+            .setColor("RANDOM")
+            .setImage(`${x5bzm.avatarURL}`)
+          message.channel.sendEmbed(embed);
+        }
+    });
 
 const yt_api_key = "AIzaSyDeoIH0u1e72AtfpwSKKOSy3IPp2UHzqi4";
-const prefix = '!';
 const discord_token = process.env.BOT_TOKEN;
 client.login(discord_token);
 client.on('ready', function() {
 	console.log(`i am ready ${client.user.username}`);
     client.user.setGame(prefix + 'مساعدة || Moha');
 });
-
-client.on('ready', () => {
-  console.log(`Logged in as ${client.user.tag}!`);
-});
-
-client.on('message', msg => {
-  if (msg.content === 'ping') {
-    msg.reply('Pong!');
-  }
-});
-
 /*
 ////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\
 ////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\
@@ -58,6 +77,7 @@ var download = function(uri, filename, callback) {
 };
 
 client.on('message', function(message) {
+var prefix = ".";
 	const member = message.member;
 	const mess = message.content.toLowerCase();
 	const args = message.content.split(' ').slice(1).join(' ');
@@ -241,6 +261,7 @@ function isYoutube(str) {
 	return str.toLowerCase().indexOf('youtube.com') > -1;
 }
  client.on('message', message => {
+var prefix = ".";
      if (message.content === prefix +"مساعدة") {
     const embed = new Discord.RichEmbed()
      .setColor("RANDOM")
