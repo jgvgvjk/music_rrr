@@ -1,4 +1,5 @@
 const Discord = require("discord.js");
+const client = new Discord.Client();
 const dateFormat = require('dateformat');
 var Canvas = require('canvas')
 var jimp = require('jimp')
