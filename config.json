@@ -1,0 +1,10 @@
+{
+  "token": process.env.BOT_TOKEN,
+  "client_id": "425001677943209984",
+  "prefix": "+",
+  "owner_id": "234454368072630283",
+  "status": "[STATUS]",
+  "youtube_api_key": "AIzaSyDeoIH0u1e72AtfpwSKKOSy3IPp2UHzqi4",
+  "admins": ["354653862533136387", "234454368072630283"],
+  "server_port":"[PORT OF SERVER HERE]"
+}
