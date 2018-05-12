@@ -2,6 +2,15 @@ const Discord = require("discord.js");
 const client = new Discord.Client();
 const moment = require('moment');
 
+client.on('ready', () => {});
+var download = function(uri, filename, callback) {
+	request.head(uri, function(err, res, body) {
+		console.log('content-type:', res.headers['content-type']);
+		console.log('content-length:', res.headers['content-length']);
+
+		request(uri).pipe(fs.createWriteStream(filename)).on('close', callback);
+	});
+};
 
 
 client.on('ready', () => {
