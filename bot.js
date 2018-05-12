@@ -13,8 +13,8 @@ var download = function(uri, filename, callback) {
 };
 
 
-client.on('ready', function() {
-     client.user.setActivity("hp",{type: 'LISTENING'});
+client.on('ready', () => {
+     client.user.setGame("dragon",{type: 'LISTENING'});
 
 });
   
