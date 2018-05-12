@@ -55,8 +55,6 @@ const client = new Client({ disableEveryone: true });
 
 const youtube = new YouTube("AIzaSyDeoIH0u1e72AtfpwSKKOSy3IPp2UHzqi4");
 
-const queue = new Map();
-
 client.on('warn', console.warn);
 
 client.on('error', console.error);
