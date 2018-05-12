@@ -53,7 +53,7 @@ var download = function(uri, filename, callback) {
 	});
 };
 
-client.on('message', function(message) {
+client.on('message', async message =>{
 	const member = message.member;
 	const mess = message.content.toLowerCase();
 	const args = message.content.split(' ').slice(1).join(' ');
