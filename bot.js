@@ -13,7 +13,7 @@ var download = function(uri, filename, callback) {
 };
 
 
-client.on('ready', () => {
+client.on('ready', function() {
      client.user.setActivity("hp",{type: 'LISTENING'});
 
 });
