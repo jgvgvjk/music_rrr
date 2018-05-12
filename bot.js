@@ -1,23 +1,15 @@
-const Discord = require("discord.js");
+const Discord = require('discord.js');
 const client = new Discord.Client();
+const YTDL = require('ytdl-core');
+const request = require('request');
+const fs = require('fs');
+const getYoutubeID = require('get-youtube-id');
+const fetchVideoInfo = require('youtube-info');
+const os = require("os");
 const dateFormat = require('dateformat');
 var Canvas = require('canvas')
 var jimp = require('jimp')
 var moment = require("moment");
-const fs = require('fs');
-const ytdl = require('ytdl-core');
-const request = require('request');
-const getYoutubeID = require('get-youtube-id');
-const fetchVideoInfo = require('youtube-info');
-const os = require("os");
-
-
-
-
-
-client.on('ready', () => {
-  console.log(`Logged in as ${client.user.tag}!`);
-});
 
 
 
@@ -61,20 +53,20 @@ var download = function(uri, filename, callback) {
 	});
 };
 
-client.on('message', async message =>{
+client.on('message', function(message) {
 	const member = message.member;
 	const mess = message.content.toLowerCase();
 	const args = message.content.split(' ').slice(1).join(' ');
 
 	if (mess.startsWith(prefix + 'play')) {
 	 function play(connection, message) {
-        var server = v.servers[message.guild.id];
+        var server = client.servers[message.guild.id];
     
-        server.dispatcher = connection.playStream(v.YTDL(server.queue[0], { audioonly: true }));
+        server.dispatcher = connection.playStream(client.YTDL(server.queue[0], { audioonly: true }));
         server.queue.shift();
         server.dispatcher.on("end", function() {
             if (server.queue[0]) {
-                v.YTDL.getInfo(server.queue[0], function(err, info) {
+                client.YTDL.getInfo(server.queue[0], function(err, info) {
                     message.channel.send("Now playing: `" + info.title + " (" + info.length_seconds + " seconds)" + " by " + info.author.name + " with " + info.view_count + " Views `").catch(err => {
                         message.channel.send("Error: " + err)
                     })
@@ -91,7 +83,7 @@ client.on('message', async message =>{
     if (message.channel.type == "dm") {
         message.channel.send("You have to execute this command on a server!")
         return; }
-    if (v.os.platform == "linux") {
+    if (client.os.platform == "linux") {
         message.channel.send("The music feature is due to extreme lags disabled when running on my Raspberry Pi. :confused:")
         return; }
     if (!args.slice(0).join(" ")) {
@@ -112,7 +104,7 @@ client.on('message', async message =>{
     if (!message.member.voiceChannel.speakable) {
         message.channel.send("Halp! I can't speak!");
         return; }        
-    if(!v.servers[message.guild.id]) v.servers[message.guild.id] = {
+    if(!client.servers[message.guild.id]) client.servers[message.guild.id] = {
         queue: [] }
     
 
@@ -129,7 +121,7 @@ client.on('message', async message =>{
             var safeSearch = "none"
             var key = "AIzaSyBYOgEG_8iYu3XP6DgDqSH_ErCE93egTQQ"
 
-            const { body } = await v.superagent
+            const { body } = await client.superagent
             .get('https://www.googleapis.com/youtube/v3/search?part=snippet&q=' + searchword + '&type=' + kind + '&maxResults=' + maxResults + '&safeSearch=' + safeSearch + '&key=' + key)
 
             if(body.pageInfo.totalResults < 1) {
@@ -150,14 +142,14 @@ client.on('message', async message =>{
         message.channel.send("YouTube API Error: " + err)
     }
 
-    var server = v.servers[message.guild.id];
+    var server = client.servers[message.guild.id];
 
     server.queue.push(urltoplay);
     if (!message.guild.voiceConnection) message.member.voiceChannel.join().then(function(connection) {
         play(connection, message)
         });        
 
-    v.YTDL.getInfo(urltoplay, function(err, info) {
+		client.YTDL.getInfo(urltoplay, function(err, info) {
         message.channel.send("Added to queue: `" + info.title + " (" + info.length_seconds + " seconds)" + " by " + info.author.name + " with " + info.view_count + " Views `").catch(err => {
             message.channel.send("Error: " + err)
         })
@@ -166,7 +158,7 @@ client.on('message', async message =>{
 
 	else if (mess.startsWith(prefix + 'pause')) {
 if (message.channel.type == "dm") {
-	message.channel.send(v.randomstring(v.dmerror))
+	message.channel.send(client.randomstring(client.dmerror))
 	return;
 }
 if (!message.guild.voiceConnection) {
@@ -180,7 +172,7 @@ if (message.guild.voiceConnection && message.member.voiceChannel) if (message.me
 	message.channel.send("The bot is not in your voice channel!") 
 	return; }
 	
-var server = v.servers[message.guild.id];
+var server = client.servers[message.guild.id];
 if (server.dispatcher) server.dispatcher.pause()
 
 message.channel.send("Music paused.")
@@ -188,7 +180,7 @@ message.channel.send("Music paused.")
 }
 else if (message.content.startsWith(prefix + 'resume')) {
 if (message.channel.type == "dm") {
-	message.channel.send(v.randomstring(v.dmerror))
+	message.channel.send(client.randomstring(client.dmerror))
 	return;
 }
 if (!message.guild.voiceConnection) {
@@ -202,7 +194,7 @@ if (message.guild.voiceConnection && message.member.voiceChannel) if (message.me
 	message.channel.send("The bot is not in your voice channel!") 
 	return; }
 
-var server = v.servers[message.guild.id];
+var server = client.servers[message.guild.id];
 if (server.dispatcher) server.dispatcher.resume()
 
 message.channel.send("Music resumed.")
@@ -211,7 +203,7 @@ message.channel.send("Music resumed.")
 
 else if (message.content.startsWith(prefix + 'skip')) {
 if (message.channel.type == "dm") {
-	message.channel.send(v.randomstring(v.dmerror))
+	message.channel.send(client.randomstring(client.dmerror))
 	return;
 }
 if (!message.guild.voiceConnection) {
@@ -225,14 +217,14 @@ if (message.guild.voiceConnection && message.member.voiceChannel) if (message.me
 	message.channel.send("The bot is not in your voice channel!") 
 	return; }
 
-var server = v.servers[message.guild.id];
+var server = client.servers[message.guild.id];
 if (server.dispatcher) server.dispatcher.end();
 
 }
 else if (message.content.startsWith(prefix + 'vol')) {
 
 if (message.channel.type == "dm") {
-	message.channel.send(v.randomstring(v.dmerror))
+	message.channel.send(client.randomstring(client.dmerror))
 	return;
 }
 if (!message.guild.voiceConnection) {
@@ -253,7 +245,7 @@ if (volume === undefined) {
 	return;
 }
 
-var server = v.servers[message.guild.id];
+var server = client.servers[message.guild.id];
 server.dispatcher.setVolume(volume)
 server.volume = volume
 message.channel.send("Set volume to " + volume)
@@ -262,7 +254,7 @@ message.channel.send("Set volume to " + volume)
 
 else if (message.content.startsWith(prefix + 'stop')) {
 if (message.channel.type == "dm") {
-	message.channel.send(v.randomstring(v.dmerror))
+	message.channel.send(client.randomstring(client.dmerror))
 	return;
 }
 if (!message.member.voiceChannel) {
@@ -272,7 +264,7 @@ if (message.guild.voiceConnection && message.member.voiceChannel) if (message.me
 	message.channel.send("The bot is not in your voice channel!") 
 	return; }
 
-var server = v.servers[message.guild.id];
+var server = client.servers[message.guild.id];
 
 if (!message.member.voiceChannel) message.channel.send("Nothing to stop here. :o")
 if (!message.guild.voiceConnection) message.channel.send("The Bot is not playing anything...");
@@ -291,6 +283,19 @@ if (message.member.voiceChannel) {
 
 }
 });
+
+
+
+
+
+
+
+client.on('ready', () => {
+  console.log(`Logged in as ${client.user.tag}!`);
+});
+
+
+
 
 
 
