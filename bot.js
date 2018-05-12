@@ -1,4 +1,5 @@
 const { Client, Util } = require('discord.js');
+const client = new Client({ disableEveryone: true });
 const YouTube = require('simple-youtube-api');
 const ytdl = require('ytdl-core');
 const request = require('request');
@@ -51,7 +52,6 @@ var download = function(uri, filename, callback) {
 
 
 
-const client = new Client({ disableEveryone: true });
 
 const youtube = new YouTube("AIzaSyDeoIH0u1e72AtfpwSKKOSy3IPp2UHzqi4");
 
