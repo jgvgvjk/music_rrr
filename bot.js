@@ -1,15 +1,10 @@
-const Discord = require('discord.js');
-const client = new Discord.Client();
-const YTDL = require('ytdl-core');
+const { Client, Util } = require('discord.js');
+const YouTube = require('simple-youtube-api');
+const ytdl = require('ytdl-core');
 const request = require('request');
 const fs = require('fs');
 const getYoutubeID = require('get-youtube-id');
 const fetchVideoInfo = require('youtube-info');
-const os = require("os");
-const dateFormat = require('dateformat');
-var Canvas = require('canvas')
-var jimp = require('jimp')
-var moment = require("moment");
 
 
 
@@ -53,384 +48,199 @@ var download = function(uri, filename, callback) {
 	});
 };
 
-client.on('message', async message =>{
-	const member = message.member;
-	const mess = message.content.toLowerCase();
-	const args = message.content.split(' ').slice(1).join(' ');
 
-	if (mess.startsWith(prefix + 'play')) {
-	 function play(connection, message) {
-        var server = client.servers[message.guild.id];
-    
-        server.dispatcher = connection.playStream(client.YTDL(server.queue[0], { audioonly: true }));
-        server.queue.shift();
-        server.dispatcher.on("end", function() {
-            if (server.queue[0]) {
-                client.YTDL.getInfo(server.queue[0], function(err, info) {
-                    message.channel.send("Now playing: `" + info.title + " (" + info.length_seconds + " seconds)" + " by " + info.author.name + " with " + info.view_count + " Views `").catch(err => {
-                        message.channel.send("Error: " + err)
-                    })
-                });
-                play(connection, message)
-                server.dispatcher.setVolume(server.volume)
-            } else { 
-            connection.disconnect();
-            message.channel.send("Stopped music and left voice channel.")
-            }
-        });
-    }
 
-    if (message.channel.type == "dm") {
-        message.channel.send("You have to execute this command on a server!")
-        return; }
-    if (client.os.platform == "linux") {
-        message.channel.send("The music feature is due to extreme lags disabled when running on my Raspberry Pi. :confused:")
-        return; }
-    if (!args.slice(0).join(" ")) {
-        message.channel.send("Please provide a valid link.");
-        return; }
-    if (!message.member.voiceChannel) {
-        message.channel.send("Please join a voice channel first.");
-        return; }
-    if (message.guild.voiceConnection && message.member.voiceChannel) if (message.member.voiceChannel.id != message.guild.voiceConnection.channel.id) {
-        message.channel.send("The bot is not in your voice channel!") 
-        return; }
-    if (message.member.voiceChannel.full) {
-        message.channel.send("Your voice channel is full!");
-        return; }
-    if (!message.member.voiceChannel.joinable) {
-        message.channel.send("Missing permission to join your voice channel!");
-        return; }
-    if (!message.member.voiceChannel.speakable) {
-        message.channel.send("Halp! I can't speak!");
-        return; }        
-    if(!client.servers[message.guild.id]) client.servers[message.guild.id] = {
-        queue: [] }
-    
 
-    //search
-    try {
-        if (!message.content.includes("https://www.yout")) {
+const client = new Client({ disableEveryone: true });
 
-            var searchword = args.slice(0).join(" ")
-            message.channel.send("Searching for " + searchword + "...");
-            
-            var kind = "video"
-            var searchword = args.slice(0).join(" ")
-            var maxResults = "1"
-            var safeSearch = "none"
-            var key = "AIzaSyBYOgEG_8iYu3XP6DgDqSH_ErCE93egTQQ"
+const youtube = new YouTube("AIzaSyDeoIH0u1e72AtfpwSKKOSy3IPp2UHzqi4");
 
-            const { body } = await client.superagent
-            .get('https://www.googleapis.com/youtube/v3/search?part=snippet&q=' + searchword + '&type=' + kind + '&maxResults=' + maxResults + '&safeSearch=' + safeSearch + '&key=' + key)
+const queue = new Map();
 
-            if(body.pageInfo.totalResults < 1) {
-                message.channel.send(":x: No results found.")
-                return;
-            }
+client.on('warn', console.warn);
 
-            var youtubeurlid = body.items[0].id.videoId
-        
-            var urltoplay = "https://www.youtube.com/watch?v=" + youtubeurlid
+client.on('error', console.error);
 
-        } else {
-            var urltoplay = args.slice(0).join(" ")
-            
-        }
-    } catch(err) {
-        console.log("musicplay YouTube API Error: " + err)
-        message.channel.send("YouTube API Error: " + err)
-    }
+client.on('ready', () => console.log('Yo this ready!'));
 
-    var server = client.servers[message.guild.id];
+client.on('disconnect', () => console.log('I just disconnected, making sure you know, I will reconnect now...'));
 
-    server.queue.push(urltoplay);
-    if (!message.guild.voiceConnection) message.member.voiceChannel.join().then(function(connection) {
-        play(connection, message)
-        });        
+client.on('reconnecting', () => console.log('I am reconnecting now!'));
 
-		client.YTDL.getInfo(urltoplay, function(err, info) {
-        message.channel.send("Added to queue: `" + info.title + " (" + info.length_seconds + " seconds)" + " by " + info.author.name + " with " + info.view_count + " Views `").catch(err => {
-            message.channel.send("Error: " + err)
-        })
-    });
-}
+client.on('message', async msg => { // eslint-disable-line
+	if (msg.author.bot) return undefined;
+	if (!msg.content.startsWith(PREFIX)) return undefined;
 
-	else if (mess.startsWith(prefix + 'pause')) {
-if (message.channel.type == "dm") {
-	message.channel.send(client.randomstring(client.dmerror))
-	return;
-}
-if (!message.guild.voiceConnection) {
-	message.channel.send("The bot is not connected to a voice channel.")
-	return;
-}
-if (!message.member.voiceChannel) {
-	message.channel.send("Please join a voice channel first.");
-	return; }
-if (message.guild.voiceConnection && message.member.voiceChannel) if (message.member.voiceChannel.id != message.guild.voiceConnection.channel.id) {
-	message.channel.send("The bot is not in your voice channel!") 
-	return; }
-	
-var server = client.servers[message.guild.id];
-if (server.dispatcher) server.dispatcher.pause()
+	const args = msg.content.split(' ');
+	const searchString = args.slice(1).join(' ');
+	const url = args[1] ? args[1].replace(/<(.+)>/g, '$1') : '';
+	const serverQueue = queue.get(msg.guild.id);
 
-message.channel.send("Music paused.")
+	let command = msg.content.toLowerCase().split(' ')[0];
+	command = command.slice(PREFIX.length)
 
-}
-else if (message.content.startsWith(prefix + 'resume')) {
-if (message.channel.type == "dm") {
-	message.channel.send(client.randomstring(client.dmerror))
-	return;
-}
-if (!message.guild.voiceConnection) {
-	message.channel.send("The bot is not connected to a voice channel.")
-	return;
-}
-if (!message.member.voiceChannel) {
-	message.channel.send("Please join a voice channel first.");
-	return; }
-if (message.guild.voiceConnection && message.member.voiceChannel) if (message.member.voiceChannel.id != message.guild.voiceConnection.channel.id) {
-	message.channel.send("The bot is not in your voice channel!") 
-	return; }
-
-var server = client.servers[message.guild.id];
-if (server.dispatcher) server.dispatcher.resume()
-
-message.channel.send("Music resumed.")
-
-}
-
-else if (message.content.startsWith(prefix + 'skip')) {
-if (message.channel.type == "dm") {
-	message.channel.send(client.randomstring(client.dmerror))
-	return;
-}
-if (!message.guild.voiceConnection) {
-	message.channel.send("The bot is not connected to a voice channel.")
-	return;
-}
-if (!message.member.voiceChannel) {
-	message.channel.send("Please join a voice channel first.");
-	return; }
-if (message.guild.voiceConnection && message.member.voiceChannel) if (message.member.voiceChannel.id != message.guild.voiceConnection.channel.id) {
-	message.channel.send("The bot is not in your voice channel!") 
-	return; }
-
-var server = client.servers[message.guild.id];
-if (server.dispatcher) server.dispatcher.end();
-
-}
-else if (message.content.startsWith(prefix + 'vol')) {
-
-if (message.channel.type == "dm") {
-	message.channel.send(client.randomstring(client.dmerror))
-	return;
-}
-if (!message.guild.voiceConnection) {
-	message.channel.send("The bot is not connected to a voice channel.")
-	return;
-}
-if (!message.member.voiceChannel) {
-	message.channel.send("Please join a voice channel first.");
-	return; }
-if (message.guild.voiceConnection && message.member.voiceChannel) if (message.member.voiceChannel.id != message.guild.voiceConnection.channel.id) {
-	message.channel.send("The bot is not in your voice channel!") 
-	return; }
-
-var volume = args[0]
-
-if (volume === undefined) {
-	message.channel.send("Please provide a number. 1 is default.")
-	return;
-}
-
-var server = client.servers[message.guild.id];
-server.dispatcher.setVolume(volume)
-server.volume = volume
-message.channel.send("Set volume to " + volume)
-
-}
-
-else if (message.content.startsWith(prefix + 'stop')) {
-if (message.channel.type == "dm") {
-	message.channel.send(client.randomstring(client.dmerror))
-	return;
-}
-if (!message.member.voiceChannel) {
-	message.channel.send("Please join a voice channel first.");
-	return; }
-if (message.guild.voiceConnection && message.member.voiceChannel) if (message.member.voiceChannel.id != message.guild.voiceConnection.channel.id) {
-	message.channel.send("The bot is not in your voice channel!") 
-	return; }
-
-var server = client.servers[message.guild.id];
-
-if (!message.member.voiceChannel) message.channel.send("Nothing to stop here. :o")
-if (!message.guild.voiceConnection) message.channel.send("The Bot is not playing anything...");
-
-if (message.member.voiceChannel) {
-	if (message.guild.voiceConnection) {
-		if (message.guild.voiceConnection.channel.id === message.member.voiceChannel.id) {
-//                    message.channel.send("Stopped music and left voice channel."); //Function "play" already sends a message
-			message.guild.voiceConnection.disconnect();
-		} else {
-			message.channel.send("The Bot is not in your voice channel!");
-			return;
+	if (command === 'play') {
+		const voiceChannel = msg.member.voiceChannel;
+		if (!voiceChannel) return msg.channel.send('I\'m sorry but you need to be in a voice channel to play music!');
+		const permissions = voiceChannel.permissionsFor(msg.client.user);
+		if (!permissions.has('CONNECT')) {
+			return msg.channel.send('I cannot connect to your voice channel, make sure I have the proper permissions!');
 		}
+		if (!permissions.has('SPEAK')) {
+			return msg.channel.send('I cannot speak in this voice channel, make sure I have the proper permissions!');
+		}
+
+		if (url.match(/^https?:\/\/(www.youtube.com|youtube.com)\/playlist(.*)$/)) {
+			const playlist = await youtube.getPlaylist(url);
+			const videos = await playlist.getVideos();
+			for (const video of Object.values(videos)) {
+				const video2 = await youtube.getVideoByID(video.id); // eslint-disable-line no-await-in-loop
+				await handleVideo(video2, msg, voiceChannel, true); // eslint-disable-line no-await-in-loop
+			}
+			return msg.channel.send(`✅ Playlist: **${playlist.title}** has been added to the queue!`);
+		} else {
+			try {
+				var video = await youtube.getVideo(url);
+			} catch (error) {
+				try {
+					var videos = await youtube.searchVideos(searchString, 10);
+					let index = 0;
+					msg.channel.send(`
+__**Song selection:**__
+
+${videos.map(video2 => `**${++index} -** ${video2.title}`).join('\n')}
+
+Please provide a value to select one of the search results ranging from 1-10.
+					`);
+					// eslint-disable-next-line max-depth
+					try {
+						var response = await msg.channel.awaitMessages(msg2 => msg2.content > 0 && msg2.content < 11, {
+							maxMatches: 1,
+							time: 10000,
+							errors: ['time']
+						});
+					} catch (err) {
+						console.error(err);
+						return msg.channel.send('No or invalid value entered, cancelling video selection.');
+					}
+					const videoIndex = parseInt(response.first().content);
+					var video = await youtube.getVideoByID(videos[videoIndex - 1].id);
+				} catch (err) {
+					console.error(err);
+					return msg.channel.send('🆘 I could not obtain any search results.');
+				}
+			}
+			return handleVideo(video, msg, voiceChannel);
+		}
+	} else if (command === 'skip') {
+		if (!msg.member.voiceChannel) return msg.channel.send('You are not in a voice channel!');
+		if (!serverQueue) return msg.channel.send('There is nothing playing that I could skip for you.');
+		serverQueue.connection.dispatcher.end('Skip command has been used!');
+		return undefined;
+	} else if (command === 'stop') {
+		if (!msg.member.voiceChannel) return msg.channel.send('You are not in a voice channel!');
+		if (!serverQueue) return msg.channel.send('There is nothing playing that I could stop for you.');
+		serverQueue.songs = [];
+		serverQueue.connection.dispatcher.end('Stop command has been used!');
+		return undefined;
+	} else if (command === 'volume') {
+		if (!msg.member.voiceChannel) return msg.channel.send('You are not in a voice channel!');
+		if (!serverQueue) return msg.channel.send('There is nothing playing.');
+		if (!args[1]) return msg.channel.send(`The current volume is: **${serverQueue.volume}**`);
+		serverQueue.volume = args[1];
+		serverQueue.connection.dispatcher.setVolumeLogarithmic(args[1] / 5);
+		return msg.channel.send(`I set the volume to: **${args[1]}**`);
+	} else if (command === 'np') {
+		if (!serverQueue) return msg.channel.send('There is nothing playing.');
+		return msg.channel.send(`🎶 Now playing: **${serverQueue.songs[0].title}**`);
+	} else if (command === 'queue') {
+		if (!serverQueue) return msg.channel.send('There is nothing playing.');
+		return msg.channel.send(`
+__**Song queue:**__
+
+${serverQueue.songs.map(song => `**-** ${song.title}`).join('\n')}
+
+**Now playing:** ${serverQueue.songs[0].title}
+		`);
+	} else if (command === 'pause') {
+		if (serverQueue && serverQueue.playing) {
+			serverQueue.playing = false;
+			serverQueue.connection.dispatcher.pause();
+			return msg.channel.send('⏸ Paused the music for you!');
+		}
+		return msg.channel.send('There is nothing playing.');
+	} else if (command === 'resume') {
+		if (serverQueue && !serverQueue.playing) {
+			serverQueue.playing = true;
+			serverQueue.connection.dispatcher.resume();
+			return msg.channel.send('▶ Resumed the music for you!');
+		}
+		return msg.channel.send('There is nothing playing.');
 	}
+
+	return undefined;
+});
+
+async function handleVideo(video, msg, voiceChannel, playlist = false) {
+	const serverQueue = queue.get(msg.guild.id);
+	console.log(video);
+	const song = {
+		id: video.id,
+		title: Util.escapeMarkdown(video.title),
+		url: `https://www.youtube.com/watch?v=${video.id}`
+	};
+	if (!serverQueue) {
+		const queueConstruct = {
+			textChannel: msg.channel,
+			voiceChannel: voiceChannel,
+			connection: null,
+			songs: [],
+			volume: 5,
+			playing: true
+		};
+		queue.set(msg.guild.id, queueConstruct);
+
+		queueConstruct.songs.push(song);
+
+		try {
+			var connection = await voiceChannel.join();
+			queueConstruct.connection = connection;
+			play(msg.guild, queueConstruct.songs[0]);
+		} catch (error) {
+			console.error(`I could not join the voice channel: ${error}`);
+			queue.delete(msg.guild.id);
+			return msg.channel.send(`I could not join the voice channel: ${error}`);
+		}
+	} else {
+		serverQueue.songs.push(song);
+		console.log(serverQueue.songs);
+		if (playlist) return undefined;
+		else return msg.channel.send(`✅ **${song.title}** has been added to the queue!`);
+	}
+	return undefined;
 }
 
+function play(guild, song) {
+	const serverQueue = queue.get(guild.id);
+
+	if (!song) {
+		serverQueue.voiceChannel.leave();
+		queue.delete(guild.id);
+		return;
+	}
+	console.log(serverQueue.songs);
+
+	const dispatcher = serverQueue.connection.playStream(ytdl(song.url))
+		.on('end', reason => {
+			if (reason === 'Stream is not generating quickly enough.') console.log('Song ended.');
+			else console.log(reason);
+			serverQueue.songs.shift();
+			play(guild, serverQueue.songs[0]);
+		})
+		.on('error', error => console.error(error));
+	dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
+
+	serverQueue.textChannel.send(`🎶 Start playing: **${song.title}**`);
 }
-});
-
-
-
-
-
-
-
-client.on('ready', () => {
-  console.log(`Logged in as ${client.user.tag}!`);
-});
-
-
-
-
-
-
-client.on('message', msg => {
-  if (msg.content === 'ping') {
-    msg.reply('Pong!');
-  }
-});
-
-
-  client.on('message', async message =>{
-    var prefix = "+";
-    if(message.content.startsWith(prefix + 'id')) {
-if(!message.channel.guild) return;
-      var args = message.content.split(" ").slice(1);
-      let user = message.mentions.users.first();
-      var men = message.mentions.users.first();
-         var heg;
-         if(men) {
-             heg = men
-         } else {
-             heg = message.author
-         }
-       var mentionned = message.mentions.members.first();
-          var h;
-         if(mentionned) {
-             h = mentionned
-         } else {
-             h = message.member
-         }
-  moment.locale('ar');
-    const w = ['./id1.png','./id2.png','./id3.png','./id4.png','./id5.png']
-        let Image = Canvas.Image,
-            canvas = new Canvas(500, 500),
-            ctx = canvas.getContext('2d');
-        ctx.patternQuality = 'bilinear';
-        ctx.filter = 'bilinear';
-        ctx.antialias = 'subpixel';
-        ctx.shadowColor = 'rgba(0, 0, 0, 0)';
-        ctx.shadowOffsetY = 2;
-        ctx.shadowBlur = 2;
-        fs.readFile(`${w[Math.floor(Math.random() * w.length)]}`, function (err, Background) {
-            if (err) return console.log(err);
-            let BG = Canvas.Image;
-            let ground = new Image;
-            ground.src = Background;
-            ctx.drawImage(ground, 0, 0, 500, 500);
-
-})
-                let url = h.user.displayAvatarURL.endsWith(".webp") ? h.user.displayAvatarURL.slice(5, -20) + ".png" : h.user.displayAvatarURL;
-                jimp.read(url, (err, ava) => {
-                    if (err) return console.log(err);
-                    ava.getBuffer(jimp.MIME_PNG, (err, buf) => {
-                        if (err) return console.log(err);
-  //time dateformet
-  const millis = new Date().getTime() - h.user.createdAt.getTime();
-  const now = new Date();
-  dateFormat(now, 'dddd, mmmm dS, yyyy');
-  const stats2 = ['online', 'Low', 'Medium', 'Insane'];
-  const days = millis / 1000 / 60 / 60 / 24;
-            dateFormat(now, 'dddd, mmmm dS, yyyy');
-            
-        
-                          //دخولك الديسكورد
-                          var day = `منذ ${days.toFixed(0)} يوم`
-                          ctx.font = '27px Arial Bold';
-                          ctx.fontSize = '30px';
-                          ctx.fillStyle = "#ffffff";
-                          ctx.textAlign = "center";
-                          ctx.fillText(day, 109, 97)
-              //wl
-              var millis1;
-        if(mentionned){
-            var millis1 = new Date().getTime() - mentionned.joinedAt
-        } else {
-            var millis1 = new Date().getTime() - moment(message.member.joinedAt);;
-            
-        }
-
-  const days1 = millis1 / 1000 / 60 / 60 / 24;
-  
-                        //دخولك السيرفر
-                        var day2 = `منذ ${days1.toFixed(0)} يوم`
-                        ctx.font = '27px Arial Bold';
-                        ctx.fontSize = '20px';
-                        ctx.fillStyle = "#ffffff";
-                        ctx.textAlign = "center";
-                        ctx.fillText(day2, 388, 97); 
-
-                        //ur name
-                        ctx.font = '27px BlowBrush';
-                        ctx.fontSize = '30px';
-                        ctx.fillStyle = "#FFFFFF";
-                        ctx.textAlign = "center";
-                        ctx.fillText(h.user.username, 245, 365);
-                        //tag
-                        ctx.font = '27px Arial Bold';
-                        ctx.fontSize = '45px';
-                        ctx.fillStyle = "#ffffff";
-                        ctx.textAlign = "center";
-                        ctx.fillText(`#${heg.discriminator}`, 120, 450);
-                        
-                        //حالتك
-                           let status;
-    if (h.presence.status === 'online') {
-        status = 'اون لاين';
-    } else if (h.presence.status === 'dnd') {
-        status = 'مشغول';
-    } else if (h.presence.status === 'idle') {
-        status = 'خمول';
-    } else if (h.presence.status === 'offline') {
-        status = 'اوف لاين';
-    }
-                        ctx.font = '27px Arial Bold';
-                        ctx.fontSize = '30px';
-                        ctx.fillStyle = "#ffffff";
-                        ctx.textAlign = "center";
-                        ctx.fillText(`${status}`, 380, 450);
-                        
-                        //Avatar
-                        let Avatar = Canvas.Image;
-                        let ava = new Avatar;
-                        ava.src = buf;
-                        ctx.beginPath();
-                        ctx.arc(250, 238, 64, 0, Math.PI*2, true); 
-                        ctx.closePath();
-                        ctx.clip();
-                        ctx.drawImage(ava, 185, 172, 130, 130 );
-                         
-     message.channel.sendFile(canvas.toBuffer())
-})
-})
-    }          
-});
-
-
 
 client.login(process.env.BOT_TOKEN);
