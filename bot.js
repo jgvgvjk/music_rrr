@@ -9,7 +9,7 @@ const talkedRecently = new Set();
 
 
 client.on('message', async message =>{
-  var prefix = "&";
+  var prefix = "+";
           var args = message.content.substring(prefix.length).split(" ");
           if (message.content.startsWith(prefix + "profile")) {
     let timeoute = new Discord.RichEmbed()
@@ -395,8 +395,8 @@ talkedRecently.add(message.author.id);
     
   }
 });
-client.on('message', async message =>{
-  var prefix = "&";
+client.on('message', message => {
+  var prefix = "+";
           var args = message.content.substring(prefix.length).split(" ");
           if (message.content.startsWith(prefix + "shop")) {
 let ubackg = rows[0].bg;
