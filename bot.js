@@ -1,4 +1,5 @@
 const Discord = require("discord.js");
+const client = new Discord.Client();
 let bg = require("./bg.json");
 let wesam = require("./wesam.json");
 var Canvas = require('canvas')
