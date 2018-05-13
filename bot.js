@@ -399,9 +399,9 @@ client.on('message', message => {
   var prefix = "+";
           var args = message.content.substring(prefix.length).split(" ");
           if (message.content.startsWith(prefix + "shop")) {
-let ubackg = rows[0].bg;
-  let curbg = bg[ubackg].bg;
-  let Image = Canvas.Image,
+var ubackg = rows[0].bg;
+  var curbg = bg[ubackg].bg;
+  var Image = Canvas.Image,
   canvas = new Canvas(800, 800),
   ctx = canvas.getContext('2d');
       ctx.patternQuality = 'bilinear';
