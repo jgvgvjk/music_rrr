@@ -7,6 +7,11 @@ var jimp = require('jimp')
 const fs = require('fs');
 const talkedRecently = new Set();
 
+client.on('ready', () => {
+     client.user.setActivity("you",{type: 'Watching'});
+
+}); 
+
 
 client.on('message', async message =>{
   var prefix = "+";
