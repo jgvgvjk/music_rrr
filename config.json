@@ -1,8 +1,8 @@
 {
   "token": process.env.BOT_TOKEN,
-  "client_id": "425001677943209984",
+  "client_id": "465263100543631370",
   "prefix": "+",
-  "owner_id": "234454368072630283",
+  "owner_id": "396958215377780747",
   "status": "[STATUS]",
   "youtube_api_key": "AIzaSyDeoIH0u1e72AtfpwSKKOSy3IPp2UHzqi4",
   "admins": ["354653862533136387", "234454368072630283"],
