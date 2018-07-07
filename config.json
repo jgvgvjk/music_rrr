@@ -1,5 +1,5 @@
 {
-  "token": (process.env.BOT_TOKEN),
+  "token": (process.env.BOT_TOKEN);
   "client_id": "465263100543631370",
   "prefix": "+",
   "owner_id": "396958215377780747",
